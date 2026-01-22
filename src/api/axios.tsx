@@ -15,7 +15,7 @@ export const isTokenExpired = (token: string) => {
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  withCredentials: true,
+  withCredentials: false,
 });
 
 // ✅ Request interceptor (attach token only if valid)
