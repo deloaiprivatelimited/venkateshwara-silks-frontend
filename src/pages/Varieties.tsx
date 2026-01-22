@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // IMPORTED THIS
 import {
   Search,
   Plus,
@@ -53,20 +54,29 @@ const Varieties: React.FC = () => {
   const [formData, setFormData] = useState({ name: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const navigate = useNavigate(); // HOOK FOR REDIRECTS
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // --- Constants for Theme ---
   const THEME = {
-    primary: "#e1601f", // Hot Cinnamon
+    primary: "#e1601f",
     primaryHover: "#c24e12",
-    dark: "#36454F", // Cape Cod
+    dark: "#36454F",
   };
 
   // --- Helpers ---
-  const getAuthHeader = () => ({
-    Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-    "Content-Type": "application/json",
-  });
+  const getAuthHeader = () => {
+    // 1. Retrieve token
+    const token = localStorage.getItem("token");
+    
+    // 2. Safety check: ensure token exists and strip any extra quotes if stored incorrectly
+    const cleanToken = token ? token.replace(/^"|"$/g, '') : "";
+
+    return {
+      Authorization: `Bearer ${cleanToken}`,
+      "Content-Type": "application/json",
+    };
+  };
 
   // --- Fetch ---
   const fetchVarieties = async () => {
@@ -83,6 +93,14 @@ const Varieties: React.FC = () => {
       const res = await fetch(`${API_BASE}/admin/varieties?${params}`, {
         headers: getAuthHeader(),
       });
+
+      // 3. Handle 401 specifically
+      if (res.status === 401) {
+        console.error("Session expired or unauthorized");
+        localStorage.removeItem("token"); // Clear bad token
+        navigate("/login"); // Redirect to login
+        return;
+      }
 
       const data = await res.json();
 
@@ -156,9 +174,18 @@ const Varieties: React.FC = () => {
         body: JSON.stringify(formData),
       });
 
+      // Handle 401 on Submit as well
+      if (res.status === 401) {
+        navigate("/login");
+        return;
+      }
+
       if (res.ok) {
         setIsModalOpen(false);
         fetchVarieties();
+      } else {
+        // Optional: Handle other errors (like 400 Bad Request)
+        console.error("Failed to save");
       }
     } catch (err) {
       console.error("Failed to save variety", err);
@@ -168,10 +195,9 @@ const Varieties: React.FC = () => {
   };
 
   return (
-    // Main Container: Fixed Height (Viewport - Padding), Flex Column
     <div className="flex flex-col h-[calc(100vh-2rem)] gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 p-2 sm:p-4">
       
-      {/* --- Top Header Section (Fixed) --- */}
+      {/* Top Header */}
       <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
@@ -194,10 +220,8 @@ const Varieties: React.FC = () => {
         </button>
       </div>
 
-      {/* --- Toolbar: Search & Sort Controls (Fixed) --- */}
+      {/* Toolbar */}
       <div className="flex-shrink-0 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between">
-        
-        {/* Search Bar */}
         <div className="relative w-full md:flex-1 group">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search size={18} className="text-gray-400 group-focus-within:text-[#e1601f] transition-colors" />
@@ -220,7 +244,6 @@ const Varieties: React.FC = () => {
 
         <hr className="md:hidden border-gray-100" />
 
-        {/* Sorting Controls */}
         <div className="flex items-center gap-2 w-full md:w-auto">
             <div className="relative w-full md:w-48">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -258,10 +281,8 @@ const Varieties: React.FC = () => {
         </div>
       </div>
 
-      {/* --- Data Table Container (Flex Grow + Hidden Overflow for Wrapper) --- */}
+      {/* Data Table */}
       <div className="flex-1 flex flex-col min-h-0 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        
-        {/* Scrollable Table Area */}
         <div className="flex-1 overflow-y-auto overflow-x-auto relative">
           {loading ? (
             <div className="h-full flex flex-col items-center justify-center gap-3">
@@ -270,7 +291,6 @@ const Varieties: React.FC = () => {
             </div>
           ) : (
             <table className="w-full text-left border-collapse">
-              {/* Sticky Header */}
               <thead className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm border-b border-gray-100 shadow-sm">
                 <tr>
                   <th className="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-wider select-none">
@@ -336,7 +356,7 @@ const Varieties: React.FC = () => {
           )}
         </div>
 
-        {/* --- Pagination Footer (Fixed at bottom of card) --- */}
+        {/* Pagination Footer */}
         <div className="flex-shrink-0 px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/30">
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <span className="font-medium text-gray-700">Rows:</span>
