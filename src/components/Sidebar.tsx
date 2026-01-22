@@ -8,8 +8,10 @@ import {
   LogOut,
   X,
   Store,
+  Link2,Copy,Check
 } from "lucide-react";
-
+import api from "../api/axios";
+import { useState } from "react";
 interface SidebarProps {
   isMobileOpen: boolean;
   setIsMobileOpen: (isOpen: boolean) => void;
@@ -24,7 +26,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setIsCollapsed,
 }) => {
   const navigate = useNavigate();
+const [isInviteCreating, setIsInviteCreating] = useState(false);
+const [copied, setCopied] = useState(false);
 
+const handleCreateInvite = async () => {
+  if (isInviteCreating) return;
+
+  setIsInviteCreating(true);
+  setCopied(false);
+
+  try {
+    // ✅ change this if your route is different
+    const res = await api.post("/invite/create");
+    const link = res.data?.link;
+
+    if (!link) {
+      alert("Invite link not received from server");
+      return;
+    }
+
+    await navigator.clipboard.writeText(link);
+
+    setCopied(true);
+
+    // optional: auto reset tick after 2 sec
+    setTimeout(() => setCopied(false), 2000);
+  } catch (err) {
+    console.error("Failed to create invite link", err);
+    alert("Failed to create invite link");
+  } finally {
+    setIsInviteCreating(false);
+  }
+};
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -108,34 +141,64 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
 
         {/* Footer Actions */}
-        <div className="p-2 border-t border-gray-50 space-y-1">
-          {/* Collapse Toggle */}
+      <div className="p-2 border-t border-gray-50 space-y-2">
+  {/* ✅ Create Invite Link */}
+  <button
+    onClick={handleCreateInvite}
+    disabled={isInviteCreating}
+    className={`
+      w-full flex items-center h-10 rounded-md transition-all duration-200 group
+      ${isCollapsed ? "justify-center" : "px-3 gap-3"}
+      ${isInviteCreating ? "opacity-60 cursor-not-allowed" : "hover:bg-orange-50"}
+    `}
+    title={isCollapsed ? "Create Invite Link" : ""}
+  >
+    <span className="flex-shrink-0 text-gray-400 group-hover:text-orange-600 transition-colors">
+      {copied ? <Check size={20} strokeWidth={1.5} /> : <Link2 size={20} strokeWidth={1.5} />}
+    </span>
 
+    <span
+      className={`
+        font-medium text-sm whitespace-nowrap overflow-hidden transition-all duration-300
+        ${isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"}
+        ${copied ? "text-orange-600" : "text-gray-500 group-hover:text-orange-700"}
+      `}
+    >
+      {copied ? "Copied!" : isInviteCreating ? "Creating..." : "Create Invite Link"}
+    </span>
 
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className={`
-              w-full flex items-center h-10 rounded-md transition-all duration-200 group
-              ${isCollapsed ? "justify-center" : "px-3 gap-3 hover:bg-red-50"}
-            `}
-          >
-            <LogOut 
-              size={20} 
-              strokeWidth={1.5}
-              className="text-gray-400 group-hover:text-red-500 transition-colors" 
-            />
-            
-            <span 
-              className={`
-                font-medium text-sm text-gray-500 group-hover:text-red-600 whitespace-nowrap overflow-hidden transition-all duration-300
-                ${isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"}
-              `}
-            >
-              Logout
-            </span>
-          </button>
-        </div>
+    {!isCollapsed && (
+      <span className="ml-auto text-gray-300 group-hover:text-orange-500 transition-colors">
+        <Copy size={16} strokeWidth={1.5} />
+      </span>
+    )}
+  </button>
+
+  {/* ✅ Logout */}
+  <button
+    onClick={handleLogout}
+    className={`
+      w-full flex items-center h-10 rounded-md transition-all duration-200 group
+      ${isCollapsed ? "justify-center" : "px-3 gap-3 hover:bg-red-50"}
+    `}
+  >
+    <LogOut
+      size={20}
+      strokeWidth={1.5}
+      className="text-gray-400 group-hover:text-red-500 transition-colors"
+    />
+
+    <span
+      className={`
+        font-medium text-sm text-gray-500 group-hover:text-red-600 whitespace-nowrap overflow-hidden transition-all duration-300
+        ${isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"}
+      `}
+    >
+      Logout
+    </span>
+  </button>
+</div>
+
       </aside>
     </>
   );

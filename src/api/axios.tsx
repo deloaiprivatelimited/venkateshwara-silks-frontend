@@ -14,38 +14,37 @@ export const isTokenExpired = (token: string) => {
 };
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-  withCredentials: true,
+  baseURL: import.meta.env.VITE_API_BASE_URL
 });
 
-// ✅ Request interceptor (attach token only if valid)
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+// ✅ Request interceptor
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
 
-  if (token) {
-    if (isTokenExpired(token)) {
+    if (token && isTokenExpired(token)) {
       localStorage.removeItem("token");
-      // do not attach expired token
-      return config;
+      window.location.href = "/admin/login";
+      return Promise.reject(new Error("Token expired"));
     }
 
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
 
-  return config;
-});
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-// ✅ Response interceptor (if token expired → force logout)
+// ✅ Response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response?.status === 401) {
       localStorage.removeItem("token");
-
-      // ✅ Redirect to login
-      window.location.href = "/login";
+      window.location.href = "/admin/login";
     }
-
     return Promise.reject(error);
   }
 );

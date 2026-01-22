@@ -11,7 +11,6 @@ import {
 import { Layout } from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Varieties from "./pages/Varieties";
-import Groups from "./pages/Groups";
 import Sarees from "./pages/Sarees";
 import Login from "./pages/Login";
 import Categories from "./pages/Category";
@@ -35,12 +34,9 @@ const PrivateRoutes = () => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return (
-    <Layout>
-      <Outlet />
-    </Layout>
-  );
+  return <Layout />; // ✅ no children
 };
+
 
 const PublicRoutes = () => {
   const { isAuthenticated } = useAuth();

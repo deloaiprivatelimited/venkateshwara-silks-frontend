@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // IMPORTED THIS
 import {
   Search,
   Plus,
@@ -54,7 +53,6 @@ const Varieties: React.FC = () => {
   const [formData, setFormData] = useState({ name: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const navigate = useNavigate(); // HOOK FOR REDIRECTS
 
   // --- Constants for Theme ---
   const THEME = {

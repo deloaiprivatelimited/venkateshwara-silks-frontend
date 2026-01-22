@@ -14,10 +14,6 @@ export const Layout: React.FC = () => {
   }, [location.pathname]);
 
   /* ---------- Page title formatting ---------- */
-  const pageSegment = location.pathname.split("/")[1] || "dashboard";
-  const formattedTitle = pageSegment
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
 
   return (
     <div className="flex max-h-screen bg-gray-50 overflow-hidden font-sans">
