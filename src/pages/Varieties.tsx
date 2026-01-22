@@ -13,7 +13,7 @@ import {
   LayoutList
 } from "lucide-react";
 import { VarietyModal } from "../components/variety/VarietyModal";
-
+import api from "../api/axios";
 // --- Types ---
 interface Variety {
   id: string;
@@ -55,7 +55,6 @@ const Varieties: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate(); // HOOK FOR REDIRECTS
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // --- Constants for Theme ---
   const THEME = {
@@ -65,59 +64,38 @@ const Varieties: React.FC = () => {
   };
 
   // --- Helpers ---
-  const getAuthHeader = () => {
-    // 1. Retrieve token
-    const token = localStorage.getItem("token");
-    
-    // 2. Safety check: ensure token exists and strip any extra quotes if stored incorrectly
-    const cleanToken = token ? token.replace(/^"|"$/g, '') : "";
-
-    return {
-      Authorization: `Bearer ${cleanToken}`,
-      "Content-Type": "application/json",
-    };
-  };
+ 
 
   // --- Fetch ---
-  const fetchVarieties = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: pagination.page.toString(),
-        per_page: pagination.per_page.toString(),
+ const fetchVarieties = async () => {
+  setLoading(true);
+
+  try {
+    const res = await api.get("/admin/varieties", {
+      params: {
+        page: pagination.page,
+        per_page: pagination.per_page,
         search: searchQuery,
         sort_by: sortBy,
         order: sortOrder,
-      });
+      },
+    });
 
-      const res = await fetch(`${API_BASE}/admin/varieties?${params}`, {
-        headers: getAuthHeader(),
-      });
+    const data = res.data;
 
-      // 3. Handle 401 specifically
-      if (res.status === 401) {
-        console.error("Session expired or unauthorized");
-        localStorage.removeItem("token"); // Clear bad token
-        navigate("/login"); // Redirect to login
-        return;
-      }
+    setVarieties(data.data || []);
+    setPagination((prev) => ({
+      ...prev,
+      total: data.total || 0,
+      total_pages: Math.ceil((data.total || 0) / prev.per_page) || 1,
+    }));
+  } catch (err) {
+    console.error("Failed to fetch varieties", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
-      const data = await res.json();
-
-      if (res.ok) {
-        setVarieties(data.data);
-        setPagination((prev) => ({
-          ...prev,
-          total: data.total,
-          total_pages: Math.ceil(data.total / prev.per_page),
-        }));
-      }
-    } catch (err) {
-      console.error("Failed to fetch varieties", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // --- Effects ---
   useEffect(() => {
@@ -157,42 +135,26 @@ const Varieties: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    try {
-      const endpoint = editingVariety
-        ? `/admin/variety/${editingVariety.id}`
-        : `/admin/variety`;
-
-      const method = editingVariety ? "PUT" : "POST";
-
-      const res = await fetch(`${API_BASE}${endpoint}`, {
-        method,
-        headers: getAuthHeader(),
-        body: JSON.stringify(formData),
-      });
-
-      // Handle 401 on Submit as well
-      if (res.status === 401) {
-        navigate("/login");
-        return;
-      }
-
-      if (res.ok) {
-        setIsModalOpen(false);
-        fetchVarieties();
-      } else {
-        // Optional: Handle other errors (like 400 Bad Request)
-        console.error("Failed to save");
-      }
-    } catch (err) {
-      console.error("Failed to save variety", err);
-    } finally {
-      setIsSubmitting(false);
+  try {
+    if (editingVariety) {
+      await api.put(`/admin/variety/${editingVariety.id}`, formData);
+    } else {
+      await api.post("/admin/variety", formData);
     }
-  };
+
+    setIsModalOpen(false);
+    fetchVarieties();
+  } catch (err) {
+    console.error("Failed to save variety", err);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   return (
     <div className="flex flex-col h-[calc(100vh-2rem)] gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 p-2 sm:p-4">

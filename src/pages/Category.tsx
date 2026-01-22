@@ -12,7 +12,7 @@ import {
   LayoutList,Eye
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import api from "../api/axios";
 // --- Types ---
 interface Category {
   id: string;
@@ -133,51 +133,45 @@ const Categories: React.FC = () => {
   const [formData, setFormData] = useState({ name: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   const THEME = {
     primary: "#e1601f",
     primaryHover: "#c24e12",
   };
 
-  const getAuthHeader = () => ({
-    Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-    "Content-Type": "application/json",
-  });
+  
 
   // ✅ Fetch Categories (You need backend GET route for categories list)
   const fetchCategories = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: pagination.page.toString(),
-        per_page: pagination.per_page.toString(),
+  setLoading(true);
+
+  try {
+    const res = await api.get("/admin/categories", {
+      params: {
+        page: pagination.page,
+        per_page: pagination.per_page,
         search: searchQuery,
         sort_by: sortBy,
         order: sortOrder,
-      });
+      },
+    });
 
-      const res = await fetch(`${API_BASE}/admin/categories?${params}`, {
-        headers: getAuthHeader(),
-      });
+    const data = res.data;
 
-      const data = await res.json();
+    setCategories(data.data || []);
+    setPagination((prev) => ({
+      ...prev,
+      total: data.total || 0,
+      total_pages:
+        data.total_pages || Math.ceil((data.total || 0) / prev.per_page) || 1,
+    }));
+  } catch (err) {
+    console.error("Failed to fetch categories", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
-      if (res.ok) {
-        setCategories(data.data || []);
-        setPagination((prev) => ({
-          ...prev,
-          total: data.total || 0,
-          total_pages:
-            data.total_pages || Math.ceil((data.total || 0) / prev.per_page) || 1,
-        }));
-      }
-    } catch (err) {
-      console.error("Failed to fetch categories", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     const timer = setTimeout(fetchCategories, 300);
@@ -215,33 +209,25 @@ const Categories: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    try {
-      const endpoint = editingCategory
-        ? `/admin/category/${editingCategory.id}`
-        : `/admin/category`;
-
-      const method = editingCategory ? "PUT" : "POST";
-
-      const res = await fetch(`${API_BASE}${endpoint}`, {
-        method,
-        headers: getAuthHeader(),
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
-        setIsModalOpen(false);
-        fetchCategories();
-      }
-    } catch (err) {
-      console.error("Failed to save category", err);
-    } finally {
-      setIsSubmitting(false);
+  try {
+    if (editingCategory) {
+      await api.put(`/admin/category/${editingCategory.id}`, formData);
+    } else {
+      await api.post("/admin/category", formData);
     }
-  };
+
+    setIsModalOpen(false);
+    fetchCategories();
+  } catch (err) {
+    console.error("Failed to save category", err);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const start =
     pagination.total === 0

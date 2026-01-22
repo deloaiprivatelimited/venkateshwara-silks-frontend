@@ -11,7 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-
+import api from "../api/axios";
 /** -----------------------------
  * Types
  ------------------------------*/
@@ -75,33 +75,30 @@ const SareeCard: React.FC<{
         />
 
         {/* Selected badge */}
-        {selected && (
-          <div
-            className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold text-white shadow"
-            style={{ backgroundColor: "#e1601f" }}
-          >
-            Selected
-          </div>
-        )}
+     {selected && (
+  <div className="absolute bottom-3 left-3 px-3 py-1 rounded-full text-xs font-bold text-white bg-black/60 backdrop-blur-sm">
+    ✓ Added
+  </div>
+)}
+
+
 
         {/* Toggle select */}
-        <button
-          disabled={!selectionEnabled}
-          onClick={() => onToggle(saree.id)}
-          className="absolute top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center border bg-white/95 backdrop-blur-sm shadow-sm hover:shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
-          title={selected ? "Deselect" : "Select"}
-          style={{
-            borderColor: selected
-              ? "rgba(225,96,31,0.35)"
-              : "rgba(0,0,0,0.08)",
-          }}
-        >
-          {selected ? (
-            <Check size={18} className="text-[#e1601f]" />
-          ) : (
-            <X size={18} className="text-gray-500" />
-          )}
-        </button>
+    <button
+  disabled={!selectionEnabled}
+  onClick={() => onToggle(saree.id)}
+  className={`absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center shadow-md transition
+    ${selectionEnabled ? "cursor-pointer" : " cursor-not-allowed"}
+    ${selected ? "bg-white" : selectionEnabled?"bg-black backdrop-blur-sm":"bg-black/40 backdrop-blur-sm"}`}
+>
+  {selected ? (
+    <Check size={18} className="text-[#e1601f]" />
+  ) : (
+    <div className="w-5 h-5 rounded-full border-2 border-white/90" />
+  )}
+</button>
+
+
       </div>
 
       <div className="p-4 space-y-2">
@@ -153,18 +150,13 @@ const CategoryBuilder: React.FC = () => {
   const navigate = useNavigate();
   const { categoryId } = useParams<{ categoryId: string }>();
 
-  // const API_BASE = import.meta.env.VITE_API_BASE_URL;
-  const API_BASE = "http://127.0.0.1:5000";
 
   const THEME = {
     primary: "#e1601f",
     primaryHover: "#c24e12",
   };
 
-  const getAuthHeader = () => ({
-    Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-    "Content-Type": "application/json",
-  });
+  
 
   const [category, setCategory] = useState<CategoryDetails | null>(null);
 
@@ -194,35 +186,30 @@ const CategoryBuilder: React.FC = () => {
    * Backend route:
    * GET /admin/category/<id>
    ----------------------------------*/
-  const fetchCategoryDetails = async () => {
-    if (!categoryId) return;
-    setLoadingCategory(true);
+ const fetchCategoryDetails = async () => {
+  if (!categoryId) return;
+  setLoadingCategory(true);
 
-    try {
-      const res = await fetch(`${API_BASE}/admin/category/${categoryId}`, {
-        method: "GET",
-        headers: getAuthHeader(),
-      });
+  try {
+    const res = await api.get(`/admin/category/${categoryId}`);
 
-      const data = await res.json();
+    const data = res.data;
+    const sareeIds = data.saree_ids || [];
 
-      if (res.ok) {
-        const sareeIds = data.saree_ids || [];
+    setCategory({
+      id: data.id,
+      name: data.name,
+      saree_ids: sareeIds,
+    });
 
-        setCategory({
-          id: data.id,
-          name: data.name,
-          saree_ids: sareeIds,
-        });
+    setSelectedIds(sareeIds);
+  } catch (e) {
+    console.error("Failed to fetch category details", e);
+  } finally {
+    setLoadingCategory(false);
+  }
+};
 
-        setSelectedIds(sareeIds);
-      }
-    } catch (e) {
-      console.error("Failed to fetch category details", e);
-    } finally {
-      setLoadingCategory(false);
-    }
-  };
 
   /** --------------------------------
    * Fetch Saree Picker (selected first)
@@ -230,42 +217,35 @@ const CategoryBuilder: React.FC = () => {
    * GET /admin/category/<category_id>/sarees/picker
    * Query params: search, variety, page, per_page
    ----------------------------------*/
-  const fetchPickerSarees = async () => {
-    if (!categoryId) return;
-    setLoadingPicker(true);
+ const fetchPickerSarees = async () => {
+  if (!categoryId) return;
+  setLoadingPicker(true);
 
-    try {
-      const params = new URLSearchParams();
+  try {
+    const res = await api.get(`/admin/category/${categoryId}/sarees/picker`, {
+      params: {
+        search: search || undefined,
+        variety: variety || undefined,
+        page: pagination.page,
+        per_page: pagination.per_page,
+      },
+    });
 
-      if (search) params.append("search", search);
-      if (variety) params.append("variety", variety);
+    const data: PickerResponse = res.data;
 
-      params.append("page", String(pagination.page));
-      params.append("per_page", String(pagination.per_page));
+    setSarees(data.data || []);
+    setPagination((prev) => ({
+      ...prev,
+      total: data.total || 0,
+      total_pages: data.total_pages || 1,
+    }));
+  } catch (e) {
+    console.error("Failed to fetch picker sarees", e);
+  } finally {
+    setLoadingPicker(false);
+  }
+};
 
-      const url = `${API_BASE}/admin/category/${categoryId}/sarees/picker?${params.toString()}`;
-
-      const res = await fetch(url, {
-        method: "GET",
-        headers: getAuthHeader(),
-      });
-
-      const data: PickerResponse = await res.json();
-
-      if (res.ok) {
-        setSarees(data.data || []);
-        setPagination((prev) => ({
-          ...prev,
-          total: data.total || 0,
-          total_pages: data.total_pages || 1,
-        }));
-      }
-    } catch (e) {
-      console.error("Failed to fetch picker sarees", e);
-    } finally {
-      setLoadingPicker(false);
-    }
-  };
 
   useEffect(() => {
     fetchCategoryDetails();
@@ -298,37 +278,29 @@ const CategoryBuilder: React.FC = () => {
    * PUT /admin/category/<category_id>/sarees
    * body: { saree_ids: [...] }
    ----------------------------------*/
-  const saveSelection = async () => {
-    if (!categoryId) return;
-    setIsSaving(true);
+const saveSelection = async () => {
+  if (!categoryId) return;
+  setIsSaving(true);
 
-    try {
-      const res = await fetch(`${API_BASE}/admin/category/${categoryId}/sarees`, {
-        method: "PUT",
-        headers: getAuthHeader(),
-        body: JSON.stringify({ saree_ids: selectedIds }),
-      });
+  try {
+    const res = await api.put(`/admin/category/${categoryId}/sarees`, {
+      saree_ids: selectedIds,
+    });
 
-      const data = await res.json();
+    setIsEditMode(false);
 
-      if (res.ok) {
-        setIsEditMode(false);
+    setCategory((prev) =>
+      prev ? { ...prev, saree_ids: [...selectedIds] } : prev
+    );
 
-        // update local category state
-        setCategory((prev) =>
-          prev ? { ...prev, saree_ids: [...selectedIds] } : prev
-        );
+    console.log("Saved:", res.data);
+  } catch (e) {
+    console.error("Failed to save category sarees", e);
+  } finally {
+    setIsSaving(false);
+  }
+};
 
-        console.log("Saved:", data);
-      } else {
-        console.error("Save failed:", data);
-      }
-    } catch (e) {
-      console.error("Failed to save category sarees", e);
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const headerTitle = useMemo(() => {
     if (loadingCategory) return "Category Builder";

@@ -18,7 +18,7 @@ import {
   ArrowDownZA
 } from "lucide-react";
 import ImageUpload from "../components/saree/ImageUpload"; 
-
+import api from "../api/axios";
 // --- Types ---
 interface Saree {
   id: string;
@@ -137,7 +137,6 @@ const SearchableSelect = ({
 
 // --- Main Page Component ---
 const Sarees: React.FC = () => {
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
   // --- Constants for Theme ---
   const THEME = {
@@ -180,101 +179,98 @@ const Sarees: React.FC = () => {
   const [formData, setFormData] = useState(initialFormState);
 
   // --- Helpers ---
-  const getAuthHeader = () => ({
-    "Authorization": `Bearer ${localStorage.getItem("token")?.replace(/^"|"$/g, '') || ""}`, 
-    "Content-Type": "application/json"
-  });
+ 
 
   // --- API Calls ---
   const fetchVarieties = useCallback(async () => {
-    setLoadingVarieties(true);
-    try {
-      const response = await fetch(`${API_BASE}/admin/varieties?limit=100`, { headers: getAuthHeader() });
-      if (response.ok) {
-        const data = await response.json();
-        setVarieties(Array.isArray(data) ? data : data.data || []);
-      }
-    } catch (error) {
-      console.error("Error fetching varieties:", error);
-    } finally {
-      setLoadingVarieties(false);
-    }
-  }, [API_BASE]);
+  setLoadingVarieties(true);
 
-  const fetchSarees = useCallback(async () => {
-    setLoading(true);
-    try {
-      const queryParams = new URLSearchParams({
-        page: pagination.page.toString(),
-        per_page: pagination.per_page.toString(),
+  try {
+    const res = await api.get("/admin/varieties", {
+      params: { limit: 100 },
+    });
+
+    const data = res.data;
+    setVarieties(Array.isArray(data) ? data : data.data || []);
+  } catch (error) {
+    console.error("Error fetching varieties:", error);
+  } finally {
+    setLoadingVarieties(false);
+  }
+}, []);
+
+ const fetchSarees = useCallback(async () => {
+  setLoading(true);
+
+  try {
+    const res = await api.get("/sarees", {
+      params: {
+        page: pagination.page,
+        per_page: pagination.per_page,
         search: searchQuery,
         sort_by: sortBy,
         order: sortOrder,
-      });
-      if (varietyFilter) queryParams.append("variety", varietyFilter);
+        variety: varietyFilter || undefined,
+      },
+    });
 
-      const response = await fetch(`${API_BASE}/sarees?${queryParams}`, { headers: getAuthHeader() });
-      if (response.ok) {
-        const data = await response.json();
-        setSarees(data.data);
-        setPagination(prev => ({
-          ...prev,
-          total: data.total,
-          total_pages: Math.ceil(data.total / prev.per_page)
-        }));
-      }
-    } catch (error) {
-      console.error("Error fetching sarees:", error);
-    } finally {
-      setLoading(false);
+    const data = res.data;
+
+    setSarees(data.data || []);
+    setPagination((prev) => ({
+      ...prev,
+      total: data.total || 0,
+      total_pages: Math.ceil((data.total || 0) / prev.per_page) || 1,
+    }));
+  } catch (error) {
+    console.error("Error fetching sarees:", error);
+  } finally {
+    setLoading(false);
+  }
+}, [searchQuery, varietyFilter, sortBy, sortOrder, pagination.page, pagination.per_page]);
+
+const handleDelete = async (id: string) => {
+  if (!window.confirm("Are you sure you want to delete this saree?")) return;
+
+  try {
+    await api.delete(`/saree/${id}`);
+    fetchSarees();
+  } catch (error) {
+    console.error(error);
+  }
+};
+const handleFormSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (formData.image_urls.length === 0) {
+    alert("Please upload at least one image.");
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    const payload = {
+      ...formData,
+      min_price: Number(formData.min_price),
+      max_price: Number(formData.max_price),
+    };
+
+    if (editingSaree) {
+      await api.put(`/saree/${editingSaree.id}`, payload);
+    } else {
+      await api.post("/saree", payload);
     }
-  }, [searchQuery, varietyFilter, sortBy, sortOrder, pagination.page, pagination.per_page]);
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this saree?")) return;
-    try {
-      const response = await fetch(`${API_BASE}/saree/${id}`, { method: "DELETE", headers: getAuthHeader() });
-      if (response.ok) fetchSarees();
-    } catch (error) { console.error(error); }
-  };
+    setIsModalOpen(false);
+    fetchSarees();
+  } catch (error: any) {
+    alert(`Error: ${error?.response?.data?.message || error.message}`);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.image_urls.length === 0) {
-      alert("Please upload at least one image.");
-      return;
-    }
-    
-    setIsSubmitting(true);
-    try {
-      const endpoint = editingSaree ? `/saree/${editingSaree.id}` : `/saree`;
-      const method = editingSaree ? "PUT" : "POST";
-      
-      const payload = {
-        ...formData,
-        min_price: Number(formData.min_price),
-        max_price: Number(formData.max_price),
-      };
-
-      const response = await fetch(`${API_BASE}${endpoint}`, {
-        method,
-        headers: getAuthHeader(),
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to save");
-      }
-
-      setIsModalOpen(false);
-      fetchSarees();
-    } catch (error: any) {
-      alert(`Error: ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handlePageChange = (page: number) => {
     if (page > 0 && page <= pagination.total_pages) {
