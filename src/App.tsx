@@ -14,6 +14,8 @@ import Varieties from "./pages/Varieties";
 import Groups from "./pages/Groups";
 import Sarees from "./pages/Sarees";
 import Login from "./pages/Login";
+import Categories from "./pages/Category";
+import CategoryBuilder from "./pages/CategoryBuilder";
 
 /* -------------------- AUTH HELPER -------------------- */
 /* JWT-based authentication (ACCESS TOKEN = source of truth) */
@@ -68,7 +70,9 @@ const App: React.FC = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/sarees" element={<Sarees />} />
           <Route path="/varieties" element={<Varieties />} />
-          <Route path="/groups" element={<Groups />} />
+          <Route path="/groups" element={<Categories/>} />
+          <Route path="/admin/categories/:categoryId/builder" element={<CategoryBuilder />} />
+
         </Route>
 
         {/* ---------- Fallback ---------- */}
