@@ -59,11 +59,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             
             {/* Brand Name */}
             <span
-              className={`font-semibold text-gray-800 tracking-tight whitespace-nowrap transition-all duration-300 ${
+              className={`font-light text-gray-800 tracking-tight whitespace-nowrap transition-all duration-300 ${
                 isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
               }`}
             >
-              Venkateshwara
+              Venkateshwara<span className="font-bold text-orange-600">Silks</span>
             </span>
           </div>
 

@@ -1,188 +1,186 @@
-import React from "react";
-import { Layers, Grid, Users, Plus, ArrowUpRight, ArrowRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { 
+  ShoppingBag, 
+  Layers, 
+  Users, 
+  ArrowUpRight, 
+  Calendar,
+  Loader2
+} from "lucide-react";
+
+// --- Types ---
+interface DashboardStats {
+  totalSarees: number;
+  totalVarieties: number;
+  totalGroups: number;
+}
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+  
+  // --- Theme Constants ---
+  const THEME = {
+    primary: "#e1601f",
+    primaryLight: "rgba(225, 96, 31, 0.1)",
+  };
+
+  // --- State ---
+  const [stats, setStats] = useState<DashboardStats>({
+    totalSarees: 0,
+    totalVarieties: 0,
+    totalGroups: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState("Admin");
+
+  // --- Helpers ---
+  const getAuthHeader = () => ({
+    "Authorization": `Bearer ${localStorage.getItem("token")?.replace(/^"|"$/g, '') || ""}`, 
+    "Content-Type": "application/json"
+  });
+
+  const formatDate = () => {
+    return new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  // --- Fetch Data ---
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        const [sareesRes, varietiesRes, groupsRes] = await Promise.all([
+          fetch(`${API_BASE}/sarees?per_page=1`, { headers: getAuthHeader() }),
+          fetch(`${API_BASE}/admin/varieties?per_page=1`, { headers: getAuthHeader() }),
+          fetch(`${API_BASE}/admin/groups?per_page=1`, { headers: getAuthHeader() }) 
+        ]);
+
+        const sareesData = sareesRes.ok ? await sareesRes.json() : { total: 0 };
+        const varietiesData = varietiesRes.ok ? await varietiesRes.json() : { total: 0 };
+        const groupsData = groupsRes.ok ? await groupsRes.json() : { total: 0 };
+
+        setStats({
+          totalSarees: sareesData.total || 0,
+          totalVarieties: varietiesData.total || 0,
+          totalGroups: groupsData.total || 0,
+        });
+
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            try {
+                const parsed = JSON.parse(storedUser);
+                if (parsed.name) setUsername(parsed.name);
+            } catch (e) { /* ignore */ }
+        }
+
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [API_BASE]);
+
+  // --- Components ---
+  const StatCard = ({ 
+    title, 
+    count, 
+    icon: Icon, 
+    link, 
+    colorClass,
+    delay 
+  }: { 
+    title: string; 
+    count: number; 
+    icon: any; 
+    link: string; 
+    colorClass: string;
+    delay: string;
+  }) => (
+    <div 
+      onClick={() => navigate(link)}
+      className={`group bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 ${delay}`}
+    >
+      <div className="flex justify-between items-start">
+        <div className="relative z-10">
+          <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">{title}</p>
+          <h3 className="text-3xl font-extrabold text-gray-900 mt-2">{loading ? "..." : count}</h3>
+        </div>
+        <div className={`p-3 rounded-xl ${colorClass} group-hover:scale-110 transition-transform duration-300`}>
+          <Icon size={24} style={{ color: THEME.primary }} />
+        </div>
+      </div>
+      
+      <div className="mt-4 flex items-center gap-1 text-sm font-medium text-[#e1601f] opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
+        <span>View Details</span>
+        <ArrowUpRight size={16} />
+      </div>
+
+      {/* Decorative Background Blob */}
+      <div className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full bg-orange-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex flex-col h-full gap-8 p-4 sm:p-6 animate-in fade-in duration-500">
       
-      {/* --- Stats Row --- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard
-          title="Total Sarees"
-          value="1,257"
-          icon={<Layers size={24} />}
-          color="orange"
-        />
-        <StatCard
-          title="Total Varieties"
-          value="82"
-          icon={<Grid size={24} />}
-          color="blue"
-        />
-        <StatCard
-          title="Total Groups"
-          value="15"
-          icon={<Users size={24} />}
-          color="purple"
-        />
+      {/* Header Section */}
+      <div className="flex flex-col justify-center">
+        <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
+            <Calendar size={14} />
+            <span>{formatDate()}</span>
+        </div>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            Welcome back, <span className="text-[#e1601f]">{username}</span>
+        </h1>
+        <p className="text-gray-500 mt-2 max-w-lg">
+            Here is what's happening with your inventory today.
+        </p>
       </div>
 
-      {/* --- Main Content Split --- */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        
-        {/* Left: Recent Inventory Table */}
-        <div className="xl:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between p-6 border-b border-gray-100">
-            <div>
-              <h3 className="font-semibold text-gray-800">Recent Inventory</h3>
-              <p className="text-sm text-gray-400">Latest items added to the stock</p>
-            </div>
-            <button 
-              onClick={() => navigate('/sarees')}
-              className="text-orange-600 hover:text-orange-700 text-sm font-medium flex items-center gap-1 hover:underline"
-            >
-              View All <ArrowRight size={16} />
-            </button>
-          </div>
-
-          <div className="overflow-x-auto flex-1">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50/50 text-gray-500 font-medium border-b border-gray-100">
-                <tr>
-                  <th className="px-6 py-4">Item Name</th>
-                  <th className="px-6 py-4">Category</th>
-                  <th className="px-6 py-4">Price</th>
-                  <th className="px-6 py-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {recentItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-800">{item.name}</div>
-                      <div className="text-xs text-gray-400">{item.id}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-600 text-xs">
-                        {item.variety}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 font-medium">{item.price}</td>
-                    <td className="px-6 py-4">
-                      <StatusBadge status={item.status} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* Stats Grid */}
+      {loading ? (
+        <div className="h-64 flex items-center justify-center">
+            <Loader2 className="animate-spin text-[#e1601f]" size={40} />
         </div>
-
-        {/* Right: Quick Actions & Alerts */}
-        <div className="flex flex-col gap-6">
-          
-          {/* Quick Actions Card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h3 className="font-semibold text-gray-800 mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              <ActionButton 
-                label="Add New Saree" 
-                icon={<Plus size={18} />} 
-                primary 
-                onClick={() => console.log("Open Add Saree Modal")} 
-              />
-              <ActionButton 
-                label="Add Variety" 
-                icon={<Grid size={18} />} 
-                onClick={() => navigate('/varieties')} 
-              />
-              <ActionButton 
-                label="Create Group" 
-                icon={<Users size={18} />} 
-                onClick={() => navigate('/groups')} 
-              />
-            </div>
-          </div>
-
-          {/* Mini Insight Card */}
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg shadow-orange-200 p-6 text-white relative overflow-hidden">
-             {/* Decorative Circle */}
-             <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-             
-             <h4 className="font-semibold text-lg relative z-10">Sales Insight</h4>
-             <p className="text-orange-100 text-sm mt-1 mb-4 relative z-10">
-               Kanjeevaram Silk sales are up by <strong>40%</strong> this week.
-             </p>
-             <button className="bg-white/20 hover:bg-white/30 text-white text-xs font-medium px-4 py-2 rounded-lg backdrop-blur-sm transition-colors flex items-center gap-2 w-fit relative z-10">
-               View Report <ArrowUpRight size={14} />
-             </button>
-          </div>
-
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatCard 
+              title="Total Sarees" 
+              count={stats.totalSarees} 
+              icon={ShoppingBag} 
+              link="/sarees"
+              colorClass="bg-orange-50"
+              delay="delay-0"
+            />
+            <StatCard 
+              title="Total Varieties" 
+              count={stats.totalVarieties} 
+              icon={Layers} 
+              link="/varieties"
+              colorClass="bg-orange-50"
+              delay="delay-100"
+            />
+            <StatCard 
+              title="Total Groups" 
+              count={stats.totalGroups} 
+              icon={Users} 
+              link="/groups"
+              colorClass="bg-orange-50"
+              delay="delay-200"
+            />
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
 export default Dashboard;
-
-/* --- Sub-Components & Data --- */
-
-const StatCard = ({ title, value, icon, color }: any) => {
-  const colorStyles: Record<string, string> = {
-    orange: "bg-orange-50 text-orange-600",
-    blue: "bg-blue-50 text-blue-600",
-    purple: "bg-purple-50 text-purple-600",
-  };
-
-  return (
-    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-5 hover:shadow-md transition-shadow h-32">
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${colorStyles[color]} shadow-sm`}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-gray-500 text-sm font-medium">{title}</p>
-        <h2 className="text-3xl font-bold text-gray-800 mt-1">{value}</h2>
-      </div>
-    </div>
-  );
-};
-
-const ActionButton = ({ label, icon, primary, onClick }: any) => (
-  <button
-    onClick={onClick}
-    className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all active:scale-95 ${
-      primary
-        ? "bg-gray-900 text-white hover:bg-gray-800 shadow-lg shadow-gray-200"
-        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
-    }`}
-  >
-    {icon}
-    {label}
-  </button>
-);
-
-const StatusBadge = ({ status }: { status: string }) => {
-  const styles =
-    status === "In Stock"
-      ? "bg-green-50 text-green-700 border-green-100"
-      : status === "Low Stock"
-      ? "bg-orange-50 text-orange-700 border-orange-100"
-      : "bg-gray-100 text-gray-600 border-gray-200";
-
-  return (
-    <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${styles}`}>
-      {status}
-    </span>
-  );
-};
-
-const recentItems = [
-  { id: "#SR1257", name: "Kanjeevaram Silk", variety: "Silk", price: "₹12,500", status: "In Stock" },
-  { id: "#SR1256", name: "Banarasi Georgette", variety: "Georgette", price: "₹8,200", status: "Low Stock" },
-  { id: "#SR1255", name: "Chanderi Cotton", variety: "Cotton", price: "₹2,400", status: "In Stock" },
-  { id: "#SR1254", name: "Paithani Silk", variety: "Silk", price: "₹15,000", status: "In Stock" },
-];
