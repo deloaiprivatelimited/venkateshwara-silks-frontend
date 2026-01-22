@@ -14,7 +14,12 @@ export const isTokenExpired = (token: string) => {
 };
 
 const api = axios.create({
+<<<<<<< HEAD
   baseURL: import.meta.env.VITE_API_BASE_URL
+=======
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  withCredentials: false,
+>>>>>>> 0f1db2324aff076815552c8b98ef9b60b373df85
 });
 
 // ✅ Request interceptor
