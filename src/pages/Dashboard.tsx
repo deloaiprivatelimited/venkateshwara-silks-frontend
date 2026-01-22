@@ -9,10 +9,7 @@ import {
   Loader2,
   Activity,
   CheckCircle2,
-<<<<<<< HEAD
-=======
-  TrendingUp,
->>>>>>> 0f1db2324aff076815552c8b98ef9b60b373df85
+  TrendingUp
 } from "lucide-react";
 
 // --- Types ---
