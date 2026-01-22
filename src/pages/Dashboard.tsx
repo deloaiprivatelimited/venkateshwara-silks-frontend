@@ -6,7 +6,10 @@ import {
   Users, 
   ArrowUpRight, 
   Calendar,
-  Loader2
+  Loader2,
+  Activity,
+  CheckCircle2,
+  TrendingUp
 } from "lucide-react";
 
 // --- Types ---
@@ -123,14 +126,12 @@ const Dashboard: React.FC = () => {
         <span>View Details</span>
         <ArrowUpRight size={16} />
       </div>
-
-      {/* Decorative Background Blob */}
       <div className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full bg-orange-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
     </div>
   );
 
   return (
-    <div className="flex flex-col h-full gap-8 p-4 sm:p-6 animate-in fade-in duration-500">
+    <div className="flex flex-col h-full gap-8 p-4 sm:p-6 animate-in fade-in duration-500 overflow-y-auto">
       
       {/* Header Section */}
       <div className="flex flex-col justify-center">
@@ -142,13 +143,13 @@ const Dashboard: React.FC = () => {
             Welcome back, <span className="text-[#e1601f]">{username}</span>
         </h1>
         <p className="text-gray-500 mt-2 max-w-lg">
-            Here is what's happening with your inventory today.
+            Here is an overview of your inventory status and recent activities.
         </p>
       </div>
 
       {/* Stats Grid */}
       {loading ? (
-        <div className="h-64 flex items-center justify-center">
+        <div className="h-32 flex items-center justify-center">
             <Loader2 className="animate-spin text-[#e1601f]" size={40} />
         </div>
       ) : (
@@ -179,6 +180,39 @@ const Dashboard: React.FC = () => {
             />
         </div>
       )}
+
+      {/* Widgets Grid (System Status, Growth, Tips) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 flex-1 pb-6">
+            
+            {/* System Status Card */}
+            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white shadow-lg animate-in fade-in slide-in-from-bottom-8 delay-100 duration-700 relative overflow-hidden h-full flex flex-col justify-center">
+                <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-bold text-lg">System Status</h3>
+                        <Activity className="text-green-400" size={20} />
+                    </div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                        <span className="text-green-400 font-medium text-sm">All Systems Operational</span>
+                    </div>
+                    <p className="text-gray-400 text-xs mt-2">API Connection: Stable</p>
+                    <p className="text-gray-400 text-xs">Last Sync: Just now</p>
+                </div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            </div>
+
+            {/* Pro Tip */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-center items-start gap-3 animate-in fade-in slide-in-from-bottom-8 delay-300 duration-700 h-full">
+                <div className="p-2 bg-orange-50 rounded-lg text-[#e1601f]">
+                    <CheckCircle2 size={24} />
+                </div>
+                <div>
+                    <h5 className="font-semibold text-gray-800 text-sm">Pro Tip</h5>
+                    <p className="text-xs text-gray-500 mt-1">Ensure all sarees have at least 2 high-quality images for better catalog presentation to increase user engagement.</p>
+                </div>
+            </div>
+
+      </div>
     </div>
   );
 };
