@@ -11,7 +11,9 @@ import {
   CheckCircle2,
   TrendingUp
 } from "lucide-react";
-
+import { Link2, Check, Copy } from "lucide-react";
+// import { useInviteLink } from "../hooks/useInviteLink";
+import { useInviteLink } from "../api/useInvite";
 // --- Types ---
 interface DashboardStats {
   totalSarees: number;
@@ -32,6 +34,7 @@ const Dashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("Admin");
+const { createInvite, isCreating, copied } = useInviteLink();
 
   // --- Helpers ---
   const getAuthHeader = () => ({
@@ -146,6 +149,31 @@ const Dashboard: React.FC = () => {
           Inventory overview and system insights.
         </p>
       </div>
+<div
+  onClick={createInvite}
+  className="cursor-pointer bg-white border rounded-2xl p-6 hover:shadow-md transition-all group"
+>
+  <div className="flex items-center gap-3">
+    <div className="p-3 bg-orange-50 rounded-xl">
+      {copied ? (
+        <Check className="text-[#e1601f]" size={22} />
+      ) : (
+        <Link2 className="text-[#e1601f]" size={22} />
+      )}
+    </div>
+
+    <div className="flex-1">
+      <h4 className="font-bold text-gray-900">
+        {copied ? "Invite Copied!" : "Create Invite Link"}
+      </h4>
+      <p className="text-sm text-gray-500">
+        {isCreating ? "Generating link..." : "Share access securely"}
+      </p>
+    </div>
+
+    <Copy className="text-gray-300 group-hover:text-[#e1601f]" size={18} />
+  </div>
+</div>
 
       {/* Stats */}
       {loading ? (
@@ -154,6 +182,7 @@ const Dashboard: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
           <StatCard
             title="Total Sarees"
             count={stats.totalSarees}
