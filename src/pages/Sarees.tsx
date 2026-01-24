@@ -446,73 +446,96 @@ const Sarees: React.FC = () => {
               <p className="text-gray-400 text-sm animate-pulse">Loading inventory...</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm border-b border-gray-100 shadow-sm">
-                <tr>
-                  <th className="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-wider select-none w-20">Image</th>
-                  <th className="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-wider select-none">Name</th>
-                  <th className="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-wider select-none">Variety</th>
-                  <th className="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-wider select-none">Price Range</th>
-                  <th className="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-wider select-none">Status</th>
-                  <th className="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-wider text-right select-none">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {sarees.length ? (
-                  sarees.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#e1601f]/[0.02] transition-colors duration-150 group">
-                      <td className="px-6 py-3">
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
-                          {item.image_urls?.[0] ? (
-                            <img src={item.image_urls[0]} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <ImageIcon size={16} className="text-gray-300" />
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-3">
-                          <div className="font-semibold text-gray-800 text-sm group-hover:text-[#e1601f] transition-colors">
-                              {item.name}
-                          </div>
-                          {item.remarks && <div className="text-xs text-gray-400 truncate max-w-[150px]">{item.remarks}</div>}
-                      </td>
-                      <td className="px-6 py-3">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 border border-gray-100">
-                          {item.variety}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 text-sm font-medium text-gray-600">
-                         ₹{item.min_price} - ₹{item.max_price}
-                      </td>
-                      <td className="px-6 py-3">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${item.status === 'published' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => openEditModal(item)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-all duration-200 hover:text-[#e1601f]">
-                            <Edit2 size={16} />
-                          </button>
-                          <button onClick={() => handleDelete(item.id)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-all duration-200 hover:text-red-500">
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="text-center py-16">
-                      <div className="flex flex-col items-center justify-center text-gray-400">
-                          <Search size={48} className="mb-4 opacity-20" />
-                          <p className="text-base font-medium text-gray-500">No sarees found</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+  {sarees.length ? (
+    sarees.map((item) => (
+      <div
+        key={item.id}
+        className="group border border-gray-200 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all overflow-hidden"
+      >
+        {/* Image */}
+        <div className="w-full h-48 bg-gray-100 overflow-hidden">
+          {item.image_urls?.[0] ? (
+            <img
+              src={item.image_urls[0]}
+              alt={item.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-300">
+              <ImageIcon size={40} />
+            </div>
+          )}
+        </div>
+
+        {/* Card Body */}
+        <div className="p-4 flex flex-col gap-2">
+          {/* Name */}
+          <div className="flex justify-between items-start gap-2">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#e1601f] transition-colors">
+                {item.name}
+              </h3>
+              {item.remarks && (
+                <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+                  {item.remarks}
+                </p>
+              )}
+            </div>
+
+            {/* Status */}
+            <span
+              className={`px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap ${
+                item.status === "published"
+                  ? "bg-green-50 text-green-700 border-green-200"
+                  : "bg-gray-100 text-gray-600 border-gray-200"
+              }`}
+            >
+              {item.status}
+            </span>
+          </div>
+
+          {/* Variety */}
+          <div>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 border border-gray-100">
+              {item.variety}
+            </span>
+          </div>
+
+          {/* Price */}
+          <div className="text-sm font-semibold text-gray-700">
+            ₹{item.min_price} - ₹{item.max_price}
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={() => openEditModal(item)}
+              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-700 transition-all"
+            >
+              <Edit2 size={16} /> Edit
+            </button>
+
+            <button
+              onClick={() => handleDelete(item.id)}
+              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-gray-200 hover:bg-red-50 text-sm font-medium text-red-600 transition-all"
+            >
+              <Trash2 size={16} /> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    ))
+  ) : (
+    <div className="col-span-full text-center py-16">
+      <div className="flex flex-col items-center justify-center text-gray-400">
+        <Search size={48} className="mb-4 opacity-20" />
+        <p className="text-base font-medium text-gray-500">No sarees found</p>
+      </div>
+    </div>
+  )}
+</div>
+
           )}
         </div>
         

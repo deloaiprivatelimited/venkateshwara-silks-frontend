@@ -11,6 +11,9 @@ import {
   ArrowDownUp,
   LayoutList
 } from "lucide-react";
+import { Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
 import { VarietyModal } from "../components/variety/VarietyModal";
 import api from "../api/axios";
 // --- Types ---
@@ -46,6 +49,7 @@ const Varieties: React.FC = () => {
     total: 0,
     total_pages: 1,
   });
+const navigate = useNavigate();
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -297,6 +301,14 @@ const handleSubmit = async (e: React.FormEvent) => {
                         >
                           <Edit2 size={18} />
                         </button>
+                        <button
+  onClick={() => navigate(`/sarees/variety/${encodeURIComponent(v.name)}`)}
+  className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-all duration-200 hover:text-blue-600"
+  title="View Sarees"
+>
+  <Eye size={18} />
+</button>
+
                       </td>
                     </tr>
                   ))
