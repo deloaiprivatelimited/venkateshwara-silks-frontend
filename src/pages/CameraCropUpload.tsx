@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback,  useRef, useState } from "react";
 import Cropper from "react-easy-crop";
 import { X, Camera, Upload, Check } from "lucide-react";
 // import api from "../../api/axios";
