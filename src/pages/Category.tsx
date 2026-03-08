@@ -12,7 +12,6 @@ import {
   LayoutList,Eye
 } from "lucide-react";
 import { Copy, Check } from "lucide-react";
-import copy from "copy-to-clipboard";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 // --- Types ---
@@ -133,23 +132,31 @@ const [generatingId, setGeneratingId] = useState<string | null>(null);
 const handleCopyInvite = async (categoryId: string) => {
   try {
     setGeneratingId(categoryId);
-    console.log("Generating invite for category:", categoryId);
 
     const res = await api.post("/invite/category/create", {
       category_id: categoryId,
     });
 
     const inviteLink = res.data.link;
-
     if (!inviteLink) throw new Error("No invite link received");
 
-    copy(inviteLink); // ✅ Safari safe
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(inviteLink);
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = inviteLink;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      document.execCommand("copy");
+      textArea.remove();
+    }
 
     setCopiedId(categoryId);
+    setTimeout(() => setCopiedId(null), 2000);
 
-    setTimeout(() => {
-      setCopiedId(null);
-    }, 2000);
   } catch (err) {
     console.error("Failed to create/copy invite", err);
   } finally {
