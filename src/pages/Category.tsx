@@ -11,6 +11,8 @@ import {
   ArrowDownUp,
   LayoutList,Eye
 } from "lucide-react";
+import { Copy, Check } from "lucide-react";
+import copy from "copy-to-clipboard";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 // --- Types ---
@@ -111,6 +113,8 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 // --- Main Page ---
 const Categories: React.FC = () => {
       const navigate = useNavigate();   // ✅ add this line
+const [copiedId, setCopiedId] = useState<string | null>(null);
+const [generatingId, setGeneratingId] = useState<string | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
@@ -126,7 +130,32 @@ const Categories: React.FC = () => {
     total: 0,
     total_pages: 1,
   });
+const handleCopyInvite = async (categoryId: string) => {
+  try {
+    setGeneratingId(categoryId);
+    console.log("Generating invite for category:", categoryId);
 
+    const res = await api.post("/invite/category/create", {
+      category_id: categoryId,
+    });
+
+    const inviteLink = res.data.link;
+
+    if (!inviteLink) throw new Error("No invite link received");
+
+    copy(inviteLink); // ✅ Safari safe
+
+    setCopiedId(categoryId);
+
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 2000);
+  } catch (err) {
+    console.error("Failed to create/copy invite", err);
+  } finally {
+    setGeneratingId(null);
+  }
+};
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -389,7 +418,7 @@ const Categories: React.FC = () => {
                         </span>
                       </td>
 
-                      <td className="px-6 py-4 text-right">
+<td className="px-6 py-4 text-right space-x-2">
                        <button
   onClick={() => navigate(`/admin/categories/${c.id}/builder`)}
   className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-all duration-200"
@@ -398,6 +427,23 @@ const Categories: React.FC = () => {
 >
   <Eye size={18} />
 </button>
+<button
+  onClick={() => handleCopyInvite(c.id)}
+  disabled={generatingId === c.id}
+  className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-all duration-200 disabled:opacity-40"
+  onMouseEnter={(e) => (e.currentTarget.style.color = "#e1601f")}
+  onMouseLeave={(e) => (e.currentTarget.style.color = "")}
+  title="Copy Invite Link"
+>
+  {generatingId === c.id ? (
+    <Loader2 size={18} className="animate-spin" />
+  ) : copiedId === c.id ? (
+    <Check size={18} />
+  ) : (
+    <Copy size={18} />
+  )}
+</button>
+
 
                         <button
                           onClick={() => openEditModal(c)}
