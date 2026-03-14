@@ -1,11 +1,10 @@
-
-
 import { useState } from "react";
 import api from "./axios";
 
 export const useInviteLink = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [inviteLink, setInviteLink] = useState(""); // ✅ store link
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -42,6 +41,8 @@ export const useInviteLink = () => {
 
       if (!link) throw new Error("No link received");
 
+      setInviteLink(link); // ✅ save link so UI can display
+
       const success = await copyToClipboard(link);
 
       if (!success) throw new Error("Copy failed");
@@ -57,5 +58,5 @@ export const useInviteLink = () => {
     }
   };
 
-  return { createInvite, isCreating, copied };
+  return { createInvite, isCreating, copied, inviteLink }; // ✅ return link
 };

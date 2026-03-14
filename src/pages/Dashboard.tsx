@@ -9,11 +9,14 @@ import {
   Loader2,
   Activity,
   CheckCircle2,
-  TrendingUp
+  TrendingUp,
+  Link2,
+  Check,
+  Copy,
 } from "lucide-react";
-import { Link2, Check, Copy } from "lucide-react";
-// import { useInviteLink } from "../hooks/useInviteLink";
+
 import { useInviteLink } from "../api/useInvite";
+
 // --- Types ---
 interface DashboardStats {
   totalSarees: number;
@@ -23,6 +26,7 @@ interface DashboardStats {
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+
   const API_BASE =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
@@ -32,9 +36,11 @@ const Dashboard: React.FC = () => {
     totalVarieties: 0,
     totalGroups: 0,
   });
+
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("Admin");
-const { createInvite, isCreating, copied } = useInviteLink();
+
+  const { createInvite, isCreating, copied, inviteLink } = useInviteLink();
 
   // --- Helpers ---
   const getAuthHeader = () => ({
@@ -56,14 +62,12 @@ const { createInvite, isCreating, copied } = useInviteLink();
   useEffect(() => {
     const fetchStats = async () => {
       setLoading(true);
+
       try {
-        const res = await fetch(
-          `${API_BASE}/admin/dashboard/stats`,
-          {
-            method: "GET",
-            headers: getAuthHeader(),
-          }
-        );
+        const res = await fetch(`${API_BASE}/admin/dashboard/stats`, {
+          method: "GET",
+          headers: getAuthHeader(),
+        });
 
         if (!res.ok) {
           throw new Error("Failed to fetch dashboard stats");
@@ -78,6 +82,7 @@ const { createInvite, isCreating, copied } = useInviteLink();
         });
 
         const storedUser = localStorage.getItem("user");
+
         if (storedUser) {
           try {
             const parsed = JSON.parse(storedUser);
@@ -96,7 +101,7 @@ const { createInvite, isCreating, copied } = useInviteLink();
     fetchStats();
   }, [API_BASE]);
 
-  // --- Components ---
+  // --- Stat Card ---
   const StatCard = ({
     title,
     count,
@@ -121,10 +126,12 @@ const { createInvite, isCreating, copied } = useInviteLink();
             {loading ? "..." : count}
           </h3>
         </div>
+
         <div className="p-3 bg-orange-50 rounded-xl">
           <Icon size={24} className="text-[#e1601f]" />
         </div>
       </div>
+
       <div className="mt-4 flex items-center gap-1 text-sm font-medium text-[#e1601f] opacity-0 group-hover:opacity-100 transition-opacity">
         <span>View Details</span>
         <ArrowUpRight size={16} />
@@ -134,46 +141,72 @@ const { createInvite, isCreating, copied } = useInviteLink();
 
   return (
     <div className="flex flex-col gap-8 p-6 overflow-y-auto">
-
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
           <Calendar size={14} />
           <span>{formatDate()}</span>
         </div>
+
         <h1 className="text-3xl font-extrabold text-gray-900">
-          Welcome back,{" "}
-          <span className="text-[#e1601f]">{username}</span>
+          Welcome back, <span className="text-[#e1601f]">{username}</span>
         </h1>
+
         <p className="text-gray-500 mt-2">
           Inventory overview and system insights.
         </p>
       </div>
-<div
-  onClick={createInvite}
-  className="cursor-pointer bg-white border rounded-2xl p-6 hover:shadow-md transition-all group"
->
-  <div className="flex items-center gap-3">
-    <div className="p-3 bg-orange-50 rounded-xl">
-      {copied ? (
-        <Check className="text-[#e1601f]" size={22} />
-      ) : (
-        <Link2 className="text-[#e1601f]" size={22} />
+
+      {/* Invite Link Generator */}
+      <div
+        onClick={createInvite}
+        className="cursor-pointer bg-white border rounded-2xl p-6 hover:shadow-md transition-all group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-orange-50 rounded-xl">
+            {copied ? (
+              <Check className="text-[#e1601f]" size={22} />
+            ) : (
+              <Link2 className="text-[#e1601f]" size={22} />
+            )}
+          </div>
+
+          <div className="flex-1">
+            <h4 className="font-bold text-gray-900">
+              {copied ? "Invite Copied!" : "Create Invite Link"}
+            </h4>
+
+            <p className="text-sm text-gray-500">
+              {isCreating ? "Generating link..." : "Share access securely"}
+            </p>
+          </div>
+
+          <Copy
+            className="text-gray-300 group-hover:text-[#e1601f]"
+            size={18}
+          />
+        </div>
+      </div>
+
+      {/* Display Invite Link */}
+      {inviteLink && (
+        <div className="bg-white border rounded-xl p-4 flex items-center gap-3">
+          <input
+            type="text"
+            value={inviteLink}
+            readOnly
+            className="flex-1 bg-gray-50 border rounded-lg px-3 py-2 text-sm text-gray-700"
+          />
+
+          <button
+            onClick={() => navigator.clipboard.writeText(inviteLink)}
+            className="flex items-center gap-1 px-3 py-2 bg-[#e1601f] text-white rounded-lg text-sm hover:bg-orange-600"
+          >
+            <Copy size={14} />
+            Copy
+          </button>
+        </div>
       )}
-    </div>
-
-    <div className="flex-1">
-      <h4 className="font-bold text-gray-900">
-        {copied ? "Invite Copied!" : "Create Invite Link"}
-      </h4>
-      <p className="text-sm text-gray-500">
-        {isCreating ? "Generating link..." : "Share access securely"}
-      </p>
-    </div>
-
-    <Copy className="text-gray-300 group-hover:text-[#e1601f]" size={18} />
-  </div>
-</div>
 
       {/* Stats */}
       {loading ? (
@@ -182,19 +215,20 @@ const { createInvite, isCreating, copied } = useInviteLink();
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
           <StatCard
             title="Total Sarees"
             count={stats.totalSarees}
             icon={ShoppingBag}
             link="/sarees"
           />
+
           <StatCard
             title="Total Varieties"
             count={stats.totalVarieties}
             icon={Layers}
             link="/varieties"
           />
+
           <StatCard
             title="Total Categories"
             count={stats.totalGroups}
@@ -206,32 +240,39 @@ const { createInvite, isCreating, copied } = useInviteLink();
 
       {/* Widgets */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
+        {/* System Status */}
         <div className="bg-gray-900 text-white rounded-2xl p-6">
           <div className="flex justify-between mb-3">
             <h3 className="font-bold">System Status</h3>
             <Activity className="text-green-400" size={18} />
           </div>
+
           <p className="text-green-400 text-sm">All Systems Operational</p>
+
           <p className="text-gray-400 text-xs mt-2">API: Stable</p>
         </div>
 
+        {/* Growth */}
         <div className="bg-orange-50 border border-orange-100 rounded-2xl p-6 text-center">
           <TrendingUp className="mx-auto text-[#e1601f]" size={28} />
+
           <h4 className="font-bold mt-2">Growth Insight</h4>
+
           <p className="text-sm text-gray-600 mt-1">
             Managing <b>{stats.totalVarieties}</b> varieties efficiently.
           </p>
         </div>
 
+        {/* Tip */}
         <div className="bg-white border rounded-2xl p-6">
           <CheckCircle2 className="text-[#e1601f]" size={24} />
+
           <h4 className="font-semibold mt-2">Pro Tip</h4>
+
           <p className="text-xs text-gray-500 mt-1">
             Add at least 2 images per saree to increase engagement.
           </p>
         </div>
-
       </div>
     </div>
   );
