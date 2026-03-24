@@ -17,7 +17,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
 
     // Exact Base URL from the image provided
-    const BASE_URL = "https://api.abhi.deloai.com";
+    const BASE_URL = "https://web-production-2d63b.up.railway.app";
 
     try {
       const response = await fetch(`${BASE_URL}/admin/login`, {
