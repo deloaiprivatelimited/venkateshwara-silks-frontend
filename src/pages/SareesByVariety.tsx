@@ -58,7 +58,17 @@ const SareesByVariety: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSaree, setEditingSaree] = useState<Saree | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+const handleDelete = async (id: string) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this saree?");
+  if (!confirmDelete) return;
 
+  try {
+    await api.delete(`/saree/${id}`);
+    fetchSarees(); // refresh list
+  } catch (err: any) {
+    alert(err?.response?.data?.message || "Failed to delete saree");
+  }
+};
 const initialFormState = {
   image_urls: [] as string[],
   variety: fixedVariety,
@@ -273,6 +283,13 @@ const initialFormState = {
                       >
                         <Edit2 size={16} />
                       </button>
+                      <button
+  onClick={() => handleDelete(item.id)}
+  className="absolute top-3 right-12 p-2 rounded-xl bg-white/90 border border-gray-200 shadow-sm hover:bg-red-50 text-gray-600 hover:text-red-600"
+  title="Delete Saree"
+>
+  <X size={16} />
+</button>
                     </div>
 
                     <div className="p-4 flex flex-col gap-2">
